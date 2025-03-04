@@ -16,8 +16,9 @@ const BeepAudio = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (!selectedFile.type.startsWith('audio/')) {
-        toast.error("Please select an audio file");
+      // Accept both audio and video formats
+      if (!selectedFile.type.startsWith('audio/') && !selectedFile.type.startsWith('video/')) {
+        toast.error("Please select an audio or video file");
         return;
       }
       setFile(selectedFile);
@@ -27,7 +28,7 @@ const BeepAudio = () => {
 
   const handleSubmit = async () => {
     if (!file) {
-      toast.error("Please select an audio file to process");
+      toast.error("Please select a file to process");
       return;
     }
 
@@ -54,7 +55,7 @@ const BeepAudio = () => {
     if (processedFile) {
       const link = document.createElement('a');
       link.href = processedFile;
-      link.download = `beeped-${file?.name || 'audio'}`;
+      link.download = `beeped-${file?.name || 'file'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -71,7 +72,7 @@ const BeepAudio = () => {
           </span>
           <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Audio</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your audio file to automatically identify and beep out inappropriate language, personal information, and sensitive content.
+            Upload your audio or video file to automatically identify and beep out inappropriate language, personal information, and sensitive content.
           </p>
         </div>
 
@@ -86,15 +87,15 @@ const BeepAudio = () => {
                   <UploadIcon className="h-8 w-8 text-whisper" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-medium">Upload your audio</p>
+                  <p className="text-lg font-medium">Upload your file</p>
                   <p className="text-sm text-muted-foreground">Drag and drop or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-2">MP3, WAV up to 100MB</p>
+                  <p className="text-xs text-muted-foreground mt-2">MP3, WAV, MP4, MOV up to 100MB</p>
                 </div>
                 <input 
                   type="file" 
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept="audio/mp3,audio/wav"
+                  accept="audio/mp3,audio/wav,video/mp4,video/mov"
                   className="hidden"
                 />
               </div>
@@ -118,18 +119,26 @@ const BeepAudio = () => {
             {processedFile && (
               <div className="w-full space-y-4">
                 <div className="border rounded-xl p-4">
-                  <audio 
-                    src={processedFile} 
-                    controls 
-                    className="w-full"
-                  />
+                  {file?.type.startsWith('video/') ? (
+                    <video 
+                      src={processedFile} 
+                      controls 
+                      className="w-full h-auto"
+                    />
+                  ) : (
+                    <audio 
+                      src={processedFile} 
+                      controls 
+                      className="w-full"
+                    />
+                  )}
                 </div>
                 <Button
                   onClick={handleDownload}
                   className="w-full flex items-center justify-center gap-2"
                 >
                   <DownloadIcon className="h-4 w-4" />
-                  Download Processed Audio
+                  Download Processed File
                 </Button>
               </div>
             )}

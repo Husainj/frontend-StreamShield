@@ -1,8 +1,8 @@
-
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
+import { CheckIcon } from "lucide-react";
 
 const Index = () => {
   useEffect(() => {

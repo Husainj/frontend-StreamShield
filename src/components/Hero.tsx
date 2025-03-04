@@ -12,19 +12,22 @@ const Hero = () => {
       id: 0,
       title: "Blur & Beep",
       description: "Automatically detect and blur visual sensitive information while beeping inappropriate audio",
-      icon: <ShieldCheckIcon className="w-7 h-7" />
+      icon: <ShieldCheckIcon className="w-7 h-7" />,
+      linkTo: "/blur-and-beep"
     },
     {
       id: 1,
       title: "Blur Video",
       description: "Blur faces, text, and other sensitive information in real-time or recorded video",
-      icon: <EyeOffIcon className="w-7 h-7" />
+      icon: <EyeOffIcon className="w-7 h-7" />,
+      linkTo: "/blur-video"
     },
     {
       id: 2,
       title: "Beep Audio",
       description: "Identify and beep out inappropriate language, personal information, and sensitive content",
-      icon: <AudioWaveformIcon className="w-7 h-7" />
+      icon: <AudioWaveformIcon className="w-7 h-7" />,
+      linkTo: "/beep-audio"
     }
   ];
 
@@ -70,6 +73,7 @@ const Hero = () => {
                 icon={feature.icon}
                 active={selectedFeature === feature.id}
                 onClick={() => setSelectedFeature(feature.id)}
+                linkTo={feature.linkTo}
                 className={`animate-slide-up stagger-${feature.id + 1}`}
               />
             ))}

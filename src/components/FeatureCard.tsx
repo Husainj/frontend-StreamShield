@@ -2,16 +2,18 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface FeatureCardProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   title: string;
   description: string;
   icon: React.ReactNode;
   active?: boolean;
+  linkTo?: string;
 }
 
 const FeatureCard = forwardRef<HTMLButtonElement, FeatureCardProps>(
-  ({ title, description, icon, active, className, ...props }, ref) => {
+  ({ title, description, icon, active, linkTo, className, ...props }, ref) => {
     return (
       <Button
         ref={ref}
@@ -32,7 +34,18 @@ const FeatureCard = forwardRef<HTMLButtonElement, FeatureCardProps>(
           {icon}
         </div>
         <h3 className="text-xl font-medium">{title}</h3>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <p className="text-muted-foreground text-sm flex-grow overflow-auto">{description}</p>
+        {linkTo && (
+          <Link to={linkTo} className="w-full">
+            <Button 
+              variant="default" 
+              className="mt-4 w-full bg-whisper hover:bg-whisper-dark text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Try It Now
+            </Button>
+          </Link>
+        )}
       </Button>
     );
   }

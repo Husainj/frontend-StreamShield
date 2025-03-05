@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,23 +5,30 @@ import { UploadIcon, DownloadIcon } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import axios from 'axios';
 
 const BeepAudio = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      // Accept both audio and video formats
       if (!selectedFile.type.startsWith('audio/') && !selectedFile.type.startsWith('video/')) {
         toast.error("Please select an audio or video file");
         return;
       }
+      if (selectedFile.size > 100 * 1024 * 1024) { // 100MB limit
+        toast.error('File size must be less than 100MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
       setProcessedFile(null);
+      setUploadProgress(0);
     }
   };
 
@@ -33,19 +39,48 @@ const BeepAudio = () => {
     }
 
     setIsProcessing(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('processOption', 'beep_video');
 
     try {
-      // In a real application, you would send the file to a backend API
-      // For this demo, we'll simulate a processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate receiving processed file
-      const processedFileUrl = URL.createObjectURL(file);
+      const response = await axios.post('/api/process-media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+        onUploadProgress: (progressEvent) => {
+          const progress = (progressEvent.loaded / progressEvent.total) * 100;
+          setUploadProgress(Math.round(progress));
+        },
+        timeout: 300000, // 5 minute timeout
+      });
+
+      const processedFileUrl = URL.createObjectURL(response.data);
       setProcessedFile(processedFileUrl);
       toast.success("Audio processed successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing audio:", error);
-      toast.error("Error processing audio");
+      let errorMessage = 'Error processing media file';
+      
+      if (error.response) {
+        try {
+          const blob = error.response.data;
+          const text = await blob.text();
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          errorMessage = 'Server error: ' + error.response.status;
+        }
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. The file might be too large or the server is busy.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -104,14 +139,21 @@ const BeepAudio = () => {
             {file && (
               <div className="w-full">
                 <p className="text-sm mb-2">
-                  Selected file: <span className="font-medium">{file.name}</span>
+                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
                 </p>
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}
                   className="w-full bg-whisper hover:bg-whisper-dark text-white"
                 >
-                  {isProcessing ? "Processing..." : "Process Audio"}
+                  {isProcessing ? (
+                    <>
+                      <span className="mr-2">Processing...</span>
+                      {uploadProgress}%
+                    </>
+                  ) : (
+                    "Process Audio"
+                  )}
                 </Button>
               </div>
             )}

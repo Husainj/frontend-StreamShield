@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,11 +5,13 @@ import { UploadIcon, DownloadIcon } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import axios from 'axios';
 
 const BlurVideo = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,31 +21,66 @@ const BlurVideo = () => {
         toast.error("Please select a video file");
         return;
       }
+      if (selectedFile.size > 100 * 1024 * 1024) { // 100MB limit
+        toast.error('File size must be less than 100MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
       setProcessedFile(null);
+      setUploadProgress(0);
     }
   };
 
   const handleSubmit = async () => {
     if (!file) {
-      toast.error("Please select a video file to process");
+      toast.error("Please select a file to process");
       return;
     }
 
     setIsProcessing(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('processOption', 'blur');
 
     try {
-      // In a real application, you would send the file to a backend API
-      // For this demo, we'll simulate a processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate receiving processed file
-      const processedFileUrl = URL.createObjectURL(file);
+      const response = await axios.post('/api/process-media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+        onUploadProgress: (progressEvent) => {
+          const progress = (progressEvent.loaded / progressEvent.total) * 100;
+          setUploadProgress(Math.round(progress));
+        },
+        timeout: 300000, // 5 minute timeout
+      });
+
+      const processedFileUrl = URL.createObjectURL(response.data);
       setProcessedFile(processedFileUrl);
       toast.success("Video processed successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing video:", error);
-      toast.error("Error processing video");
+      let errorMessage = 'Error processing media file';
+      
+      if (error.response) {
+        try {
+          const blob = error.response.data;
+          const text = await blob.text();
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          errorMessage = 'Server error: ' + error.response.status;
+        }
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. The file might be too large or the server is busy.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -71,7 +107,7 @@ const BlurVideo = () => {
           </span>
           <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Video</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your video to automatically detect and blur faces, text, and other sensitive information.
+            Upload your video file to automatically blur faces, sensitive information, and personal content.
           </p>
         </div>
 
@@ -103,21 +139,28 @@ const BlurVideo = () => {
             {file && (
               <div className="w-full">
                 <p className="text-sm mb-2">
-                  Selected file: <span className="font-medium">{file.name}</span>
+                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
                 </p>
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}
                   className="w-full bg-whisper hover:bg-whisper-dark text-white"
                 >
-                  {isProcessing ? "Processing..." : "Process Video"}
+                  {isProcessing ? (
+                    <>
+                      <span className="mr-2">Processing...</span>
+                      {uploadProgress}%
+                    </>
+                  ) : (
+                    "Process Video"
+                  )}
                 </Button>
               </div>
             )}
 
             {processedFile && (
               <div className="w-full space-y-4">
-                <div className="border rounded-xl overflow-hidden">
+                <div className="border rounded-xl p-4">
                   <video 
                     src={processedFile} 
                     controls 
@@ -129,7 +172,7 @@ const BlurVideo = () => {
                   className="w-full flex items-center justify-center gap-2"
                 >
                   <DownloadIcon className="h-4 w-4" />
-                  Download Processed Video
+                  Download Processed File
                 </Button>
               </div>
             )}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, EyeOffIcon, AudioWaveformIcon, ShieldCheckIcon } from "lucide-react";
@@ -41,12 +40,10 @@ const Hero = () => {
           Protect Your Privacy with Intelligent Blurring & Audio Filtering
         </h1>
         <p className="text-lg text-muted-foreground mb-8 mx-auto max-w-2xl text-balance">
-          WhisperGuard automatically detects and protects sensitive information in your videos and audio with advanced AI technology.
+          StreamShield automatically detects and protects sensitive information in your videos and audio with advanced AI technology.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button className="bg-whisper hover:bg-whisper-dark text-white min-w-40 h-12 rounded-lg shadow-sm transition-all duration-300 hover:shadow">
-            Get Started Free
-          </Button>
+      
           <Button variant="outline" className="min-w-40 h-12 rounded-lg">
             Watch Demo
           </Button>
@@ -57,11 +54,15 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-whisper/5 to-transparent rounded-3xl -z-10"></div>
         <div className="max-w-5xl mx-auto glass-card rounded-3xl p-8 lg:p-12 animate-blur-in">
           <div className="w-full aspect-[16/9] bg-whisper-muted rounded-xl overflow-hidden relative mb-8">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full w-20 h-20 bg-whisper/90 flex items-center justify-center cursor-pointer hover:bg-whisper transition-colors">
-                <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
-              </div>
-            </div>
+            <video 
+              className="w-full h-full object-cover"
+              controls
+              playsInline
+              poster="/video-placeholder.png"
+            >
+              <source src="../assets/demoVideo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
@@ -82,7 +83,7 @@ const Hero = () => {
       </div>
 
       <div className="mt-24 text-center animate-fade-in">
-        <h2 className="text-3xl md:text-4xl font-medium mb-6">Why Choose WhisperGuard?</h2>
+        <h2 className="text-3xl md:text-4xl font-medium mb-6">Why Choose StreamShield?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
           {[
             {

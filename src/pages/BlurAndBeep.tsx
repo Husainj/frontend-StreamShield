@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,18 +5,30 @@ import { UploadIcon, DownloadIcon } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import axios from 'axios';
 
 const BlurAndBeep = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      if (!selectedFile.type.startsWith('video/')) {
+        toast.error("Please select a video file");
+        return;
+      }
+      if (selectedFile.size > 100 * 1024 * 1024) { // 100MB limit
+        toast.error('File size must be less than 100MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
       setProcessedFile(null);
+      setUploadProgress(0);
     }
   };
 
@@ -28,19 +39,48 @@ const BlurAndBeep = () => {
     }
 
     setIsProcessing(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('processOption', 'beep_audio');
 
     try {
-      // In a real application, you would send the file to a backend API
-      // For this demo, we'll simulate a processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate receiving processed file
-      const processedFileUrl = URL.createObjectURL(file);
+      const response = await axios.post('/api/process-media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+        onUploadProgress: (progressEvent) => {
+          const progress = (progressEvent.loaded / progressEvent.total) * 100;
+          setUploadProgress(Math.round(progress));
+        },
+        timeout: 300000, // 5 minute timeout
+      });
+
+      const processedFileUrl = URL.createObjectURL(response.data);
       setProcessedFile(processedFileUrl);
-      toast.success("File processed successfully");
-    } catch (error) {
-      console.error("Error processing file:", error);
-      toast.error("Error processing file");
+      toast.success("Video processed successfully");
+    } catch (error: any) {
+      console.error("Error processing video:", error);
+      let errorMessage = 'Error processing media file';
+      
+      if (error.response) {
+        try {
+          const blob = error.response.data;
+          const text = await blob.text();
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          errorMessage = 'Server error: ' + error.response.status;
+        }
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. The file might be too large or the server is busy.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -50,7 +90,7 @@ const BlurAndBeep = () => {
     if (processedFile) {
       const link = document.createElement('a');
       link.href = processedFile;
-      link.download = `processed-${file?.name || 'file'}`;
+      link.download = `processed-${file?.name || 'video'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -63,11 +103,11 @@ const BlurAndBeep = () => {
       <main className="py-24 px-6 md:px-10 max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1 rounded-full bg-whisper/10 text-whisper text-sm font-medium mb-4">
-            Blur & Beep
+            Blur and Beep
           </span>
-          <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Video and Audio</h1>
+          <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Video</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your media file to automatically detect and blur sensitive visual information while beeping inappropriate audio content.
+            Upload your video file to automatically blur faces and beep out sensitive audio content.
           </p>
         </div>
 
@@ -82,15 +122,15 @@ const BlurAndBeep = () => {
                   <UploadIcon className="h-8 w-8 text-whisper" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-medium">Upload your file</p>
+                  <p className="text-lg font-medium">Upload your video</p>
                   <p className="text-sm text-muted-foreground">Drag and drop or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-2">MP4, MOV, MP3, WAV up to 100MB</p>
+                  <p className="text-xs text-muted-foreground mt-2">MP4, MOV up to 100MB</p>
                 </div>
                 <input 
                   type="file" 
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept="video/mp4,video/mov,audio/mp3,audio/wav"
+                  accept="video/mp4,video/mov"
                   className="hidden"
                 />
               </div>
@@ -99,34 +139,33 @@ const BlurAndBeep = () => {
             {file && (
               <div className="w-full">
                 <p className="text-sm mb-2">
-                  Selected file: <span className="font-medium">{file.name}</span>
+                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
                 </p>
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}
                   className="w-full bg-whisper hover:bg-whisper-dark text-white"
                 >
-                  {isProcessing ? "Processing..." : "Process File"}
+                  {isProcessing ? (
+                    <>
+                      <span className="mr-2">Processing...</span>
+                      {uploadProgress}%
+                    </>
+                  ) : (
+                    "Process Video"
+                  )}
                 </Button>
               </div>
             )}
 
             {processedFile && (
               <div className="w-full space-y-4">
-                <div className="border rounded-xl overflow-hidden">
-                  {file?.type.startsWith('video') ? (
-                    <video 
-                      src={processedFile} 
-                      controls 
-                      className="w-full h-auto"
-                    />
-                  ) : (
-                    <audio 
-                      src={processedFile} 
-                      controls 
-                      className="w-full"
-                    />
-                  )}
+                <div className="border rounded-xl p-4">
+                  <video 
+                    src={processedFile} 
+                    controls 
+                    className="w-full h-auto"
+                  />
                 </div>
                 <Button
                   onClick={handleDownload}

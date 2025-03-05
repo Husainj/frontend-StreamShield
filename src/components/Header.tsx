@@ -27,9 +27,9 @@ const Header = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-whisper flex items-center justify-center">
-            <span className="text-white font-semibold">W</span>
+            <span className="text-white font-semibold">S</span>
           </div>
-          <span className="font-medium text-lg">WhisperGuard</span>
+          <span className="font-medium text-lg">StreamShield</span>
         </div>
         
         <nav className="hidden md:flex items-center gap-8">
@@ -37,21 +37,9 @@ const Header = () => {
             Features
           </a>
           <a href="#how-it-works" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-            How it Works
-          </a>
-          <a href="#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-            Pricing
+            How it Works ?
           </a>
         </nav>
-        
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden md:flex">
-            Log in
-          </Button>
-          <Button className="bg-whisper hover:bg-whisper-dark text-white shadow-sm transition-all duration-300 hover:shadow">
-            Get Started
-          </Button>
-        </div>
       </div>
     </header>
   );

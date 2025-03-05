@@ -1,4 +1,3 @@
-
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +22,7 @@ const FeatureCard = forwardRef<HTMLButtonElement, FeatureCardProps>(
           "flex flex-col items-center text-left h-full w-full p-6 gap-4 rounded-2xl border transition-all duration-300",
           "group hover:border-whisper hover:shadow-md hover:bg-white",
           active ? "border-whisper bg-white shadow-md" : "bg-white/50 backdrop-blur-sm",
+          "relative",
           className
         )}
       >
@@ -33,8 +33,8 @@ const FeatureCard = forwardRef<HTMLButtonElement, FeatureCardProps>(
         )}>
           {icon}
         </div>
-        <h3 className="text-xl font-medium">{title}</h3>
-        <p className="text-muted-foreground text-sm flex-grow overflow-auto">{description}</p>
+        <h3 className="text-xl font-medium text-center w-full">{title}</h3>
+        <p className="text-muted-foreground text-sm w-full text-center whitespace-normal break-words">{description}</p>
         {linkTo && (
           <Link to={linkTo} className="w-full">
             <Button 

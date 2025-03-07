@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, EyeOffIcon, AudioWaveformIcon, ShieldCheckIcon } from "lucide-react";
+import { CheckIcon, EyeOffIcon, AudioWaveformIcon, ShieldCheckIcon , Video } from "lucide-react";
 import FeatureCard from "./FeatureCard";
 
 const Hero = () => {
   const [selectedFeature, setSelectedFeature] = useState<number>(0);
+
+  const scrollToVideo = () => {
+    const videoElement = document.getElementById('demo-video');
+    if (videoElement) {
+      videoElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const features = [
     {
@@ -27,6 +34,13 @@ const Hero = () => {
       description: "Identify and beep out inappropriate language, personal information, and sensitive content",
       icon: <AudioWaveformIcon className="w-7 h-7" />,
       linkTo: "/beep-audio"
+    },
+    {
+      id: 3,
+      title: "Stream with Privacy",
+      description: "Stream with privacy and security features built-in to help keep your content safe",
+      icon: <Video className="w-7 h-7" />,
+      linkTo: "/stream-with-privacy"
     }
   ];
 
@@ -44,7 +58,8 @@ const Hero = () => {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
       
-          <Button variant="outline" className="min-w-40 h-12 rounded-lg">
+        
+          <Button variant="outline" className="min-w-40 h-12 rounded-lg" onClick={scrollToVideo}>
             Watch Demo
           </Button>
         </div>
@@ -53,19 +68,19 @@ const Hero = () => {
       <div className="relative mt-24 mb-16">
         <div className="absolute inset-0 bg-gradient-to-b from-whisper/5 to-transparent rounded-3xl -z-10"></div>
         <div className="max-w-5xl mx-auto glass-card rounded-3xl p-8 lg:p-12 animate-blur-in">
-          <div className="w-full aspect-[16/9] bg-whisper-muted rounded-xl overflow-hidden relative mb-8">
+          <div id="demo-video" className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-xl">
             <video 
               className="w-full h-full object-cover"
               controls
               playsInline
               poster="/video-placeholder.png"
             >
-              <source src="../assets/demoVideo.mp4" type="video/mp4" />
+              <source src="/demoVideo.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          <div id="features" className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             {features.map((feature) => (
               <FeatureCard
                 key={feature.id}

@@ -160,13 +160,13 @@ const BlurVideo = () => {
 
             {processedFile && (
               <div className="w-full space-y-4">
-                <div className="border rounded-xl p-4">
+                {/* <div className="border rounded-xl p-4">
                   <video 
                     src={processedFile} 
                     controls 
                     className="w-full h-auto"
                   />
-                </div>
+                </div> */}
                 <Button
                   onClick={handleDownload}
                   className="w-full flex items-center justify-center gap-2"

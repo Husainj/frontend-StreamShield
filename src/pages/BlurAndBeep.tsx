@@ -64,7 +64,7 @@ const BlurAndBeep = () => {
     } catch (error: any) {
       console.error("Error processing video:", error);
       let errorMessage = 'Error processing media file';
-      
+
       if (error.response) {
         try {
           const blob = error.response.data;
@@ -79,7 +79,7 @@ const BlurAndBeep = () => {
       } else if (!error.response) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -113,7 +113,7 @@ const BlurAndBeep = () => {
 
         <Card className="p-8 rounded-2xl glass-card">
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div 
+            <div
               className="border-2 border-dashed border-whisper/30 rounded-xl p-8 w-full cursor-pointer hover:border-whisper/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -126,8 +126,8 @@ const BlurAndBeep = () => {
                   <p className="text-sm text-muted-foreground">Drag and drop or click to browse</p>
                   <p className="text-xs text-muted-foreground mt-2">MP4, MOV up to 100MB</p>
                 </div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   accept="video/mp4,video/mov"
@@ -160,13 +160,13 @@ const BlurAndBeep = () => {
 
             {processedFile && (
               <div className="w-full space-y-4">
-                <div className="border rounded-xl p-4">
-                  <video 
-                    src={processedFile} 
-                    controls 
+                {/* <div className="border rounded-xl p-4">
+                  <video
+                    src={processedFile}
+                    controls
                     className="w-full h-auto"
                   />
-                </div>
+                </div> */}
                 <Button
                   onClick={handleDownload}
                   className="w-full flex items-center justify-center gap-2"

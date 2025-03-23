@@ -9,10 +9,13 @@ import axios from 'axios';
 
 const BeepAudio = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [textFile, setTextFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -32,6 +35,22 @@ const BeepAudio = () => {
     }
   };
 
+  const handleTextFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== 'text/plain') {
+        toast.error("Please select a .txt file");
+        return;
+      }
+      if (selectedFile.size > 1024 * 1024) { // 1MB limit for text file
+        toast.error('Text file size must be less than 1MB');
+        e.target.value = '';
+        return;
+      }
+      setTextFile(selectedFile);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!file) {
       toast.error("Please select a file to process");
@@ -44,7 +63,9 @@ const BeepAudio = () => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('processOption', 'beep_video');
-
+    if (textFile) {
+      formData.append('textFile', textFile); // Add text file if present
+    }
     try {
       const response = await axios.post('/api/process-media', formData, {
         headers: {
@@ -136,11 +157,41 @@ const BeepAudio = () => {
               </div>
             </div>
 
-            {file && (
-              <div className="w-full">
-                <p className="text-sm mb-2">
-                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                </p>
+            <div 
+              className="border-2 border-dashed border-whisper/30 rounded-xl p-8 w-full cursor-pointer hover:border-whisper/50 transition-colors"
+              onClick={() => textInputRef.current?.click()}
+            >
+              <div className="flex flex-col items-center space-y-4">
+                <div className="p-4 bg-whisper/10 rounded-full">
+                  <UploadIcon className="h-8 w-8 text-whisper" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium">Upload custom words (optional)</p>
+                  <p className="text-sm text-muted-foreground">Upload a .txt file with words to censor</p>
+                  <p className="text-xs text-muted-foreground mt-2">Plain text file up to 1MB</p>
+                </div>
+                <input 
+                  type="file" 
+                  ref={textInputRef}
+                  onChange={handleTextFileChange}
+                  accept=".txt"
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {(file || textFile) && (
+              <div className="w-full space-y-4">
+                {file && (
+                  <p className="text-sm">
+                    Selected media: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </p>
+                )}
+                {textFile && (
+                  <p className="text-sm">
+                    Selected text file: <span className="font-medium">{textFile.name}</span> ({(textFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}

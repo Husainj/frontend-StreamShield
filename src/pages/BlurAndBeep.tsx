@@ -5,30 +5,50 @@ import { UploadIcon, DownloadIcon } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
-import axios from 'axios';
+import axios from "axios";
 
 const BlurAndBeep = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [textFile, setTextFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (!selectedFile.type.startsWith('video/')) {
+      if (!selectedFile.type.startsWith("video/")) {
         toast.error("Please select a video file");
         return;
       }
-      if (selectedFile.size > 100 * 1024 * 1024) { // 100MB limit
-        toast.error('File size must be less than 100MB');
-        e.target.value = '';
+      if (selectedFile.size > 100 * 1024 * 1024) {
+        // 100MB limit
+        toast.error("File size must be less than 100MB");
+        e.target.value = "";
         return;
       }
       setFile(selectedFile);
       setProcessedFile(null);
       setUploadProgress(0);
+    }
+  };
+
+  const handleTextFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== "text/plain") {
+        toast.error("Please select a .txt file");
+        return;
+      }
+      if (selectedFile.size > 1024 * 1024) {
+        // 1MB limit for text file
+        toast.error("Text file size must be less than 1MB");
+        e.target.value = "";
+        return;
+      }
+      setTextFile(selectedFile);
     }
   };
 
@@ -42,15 +62,17 @@ const BlurAndBeep = () => {
     setUploadProgress(0);
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('processOption', 'beep_audio');
-
+    formData.append("file", file);
+    formData.append("processOption", "beep_audio");
+    if (textFile) {
+      formData.append("textFile", textFile); // Add text file if present
+    }
     try {
-      const response = await axios.post('/api/process-media', formData, {
+      const response = await axios.post("/api/process-media", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
-        responseType: 'blob',
+        responseType: "blob",
         onUploadProgress: (progressEvent) => {
           const progress = (progressEvent.loaded / progressEvent.total) * 100;
           setUploadProgress(Math.round(progress));
@@ -63,7 +85,7 @@ const BlurAndBeep = () => {
       toast.success("Video processed successfully");
     } catch (error: any) {
       console.error("Error processing video:", error);
-      let errorMessage = 'Error processing media file';
+      let errorMessage = "Error processing media file";
 
       if (error.response) {
         try {
@@ -72,12 +94,13 @@ const BlurAndBeep = () => {
           const errorData = JSON.parse(text);
           errorMessage = errorData.detail || errorMessage;
         } catch (e) {
-          errorMessage = 'Server error: ' + error.response.status;
+          errorMessage = "Server error: " + error.response.status;
         }
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. The file might be too large or the server is busy.';
+      } else if (error.code === "ECONNABORTED") {
+        errorMessage =
+          "Request timed out. The file might be too large or the server is busy.";
       } else if (!error.response) {
-        errorMessage = 'Network error. Please check your connection.';
+        errorMessage = "Network error. Please check your connection.";
       }
 
       toast.error(errorMessage);
@@ -88,9 +111,9 @@ const BlurAndBeep = () => {
 
   const handleDownload = () => {
     if (processedFile) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = processedFile;
-      link.download = `processed-${file?.name || 'video'}`;
+      link.download = `processed-${file?.name || "video"}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -105,9 +128,12 @@ const BlurAndBeep = () => {
           <span className="inline-block px-4 py-1 rounded-full bg-whisper/10 text-whisper text-sm font-medium mb-4">
             Blur and Beep
           </span>
-          <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Video</h1>
+          <h1 className="text-3xl md:text-4xl font-medium mb-6">
+            Process Video
+          </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your video file to automatically blur faces and beep out sensitive audio content.
+            Upload your video file to automatically blur faces and beep out
+            sensitive audio content.
           </p>
         </div>
 
@@ -123,8 +149,12 @@ const BlurAndBeep = () => {
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-medium">Upload your video</p>
-                  <p className="text-sm text-muted-foreground">Drag and drop or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-2">MP4, MOV up to 100MB</p>
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop or click to browse
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    MP4, MOV up to 100MB
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -136,11 +166,51 @@ const BlurAndBeep = () => {
               </div>
             </div>
 
-            {file && (
-              <div className="w-full">
-                <p className="text-sm mb-2">
-                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                </p>
+            <div
+              className="border-2 border-dashed border-whisper/30 rounded-xl p-8 w-full cursor-pointer hover:border-whisper/50 transition-colors"
+              onClick={() => textInputRef.current?.click()}
+            >
+              <div className="flex flex-col items-center space-y-4">
+                <div className="p-4 bg-whisper/10 rounded-full">
+                  <UploadIcon className="h-8 w-8 text-whisper" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium">
+                    Upload custom words (optional)
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Upload a .txt file with words to censor
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Plain text file up to 1MB
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  ref={textInputRef}
+                  onChange={handleTextFileChange}
+                  accept=".txt"
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {(file || textFile) && (
+              <div className="w-full space-y-4">
+                {file && (
+                  <p className="text-sm">
+                    Selected media:{" "}
+                    <span className="font-medium">{file.name}</span> (
+                    {(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </p>
+                )}
+                {textFile && (
+                  <p className="text-sm">
+                    Selected text file:{" "}
+                    <span className="font-medium">{textFile.name}</span> (
+                    {(textFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}
@@ -152,7 +222,7 @@ const BlurAndBeep = () => {
                       {uploadProgress}%
                     </>
                   ) : (
-                    "Process Video"
+                    "Process Audio"
                   )}
                 </Button>
               </div>

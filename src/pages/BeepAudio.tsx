@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UploadIcon, DownloadIcon } from "lucide-react";
+import { UploadIcon, DownloadIcon, X } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
@@ -9,13 +9,12 @@ import axios from 'axios';
 
 const BeepAudio = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [textFile, setTextFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [badWords, setBadWords] = useState<string[]>([]); // List of words to censor
+  const [wordInput, setWordInput] = useState(""); // Current input value
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textInputRef = useRef<HTMLInputElement>(null);
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -35,20 +34,19 @@ const BeepAudio = () => {
     }
   };
 
-  const handleTextFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type !== 'text/plain') {
-        toast.error("Please select a .txt file");
-        return;
-      }
-      if (selectedFile.size > 1024 * 1024) { // 1MB limit for text file
-        toast.error('Text file size must be less than 1MB');
-        e.target.value = '';
-        return;
-      }
-      setTextFile(selectedFile);
+  const handleWordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWordInput(e.target.value);
+  };
+
+  const handleWordSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && wordInput.trim()) {
+      setBadWords([...badWords, wordInput.trim()]);
+      setWordInput(""); // Clear input after adding
     }
+  };
+
+  const removeWord = (wordToRemove: string) => {
+    setBadWords(badWords.filter(word => word !== wordToRemove));
   };
 
   const handleSubmit = async () => {
@@ -63,9 +61,10 @@ const BeepAudio = () => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('processOption', 'beep_video');
-    if (textFile) {
-      formData.append('textFile', textFile); // Add text file if present
+    if (badWords.length > 0) {
+      formData.append('badWords', JSON.stringify(badWords)); // Send words as JSON string
     }
+
     try {
       const response = await axios.post('/api/process-media', formData, {
         headers: {
@@ -128,12 +127,13 @@ const BeepAudio = () => {
           </span>
           <h1 className="text-3xl md:text-4xl font-medium mb-6">Process Audio</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your audio or video file to automatically identify and beep out inappropriate language, personal information, and sensitive content.
+            Upload your audio or video file to automatically identify and beep out inappropriate language. Add custom words to censor below.
           </p>
         </div>
 
         <Card className="p-8 rounded-2xl glass-card">
           <div className="flex flex-col items-center justify-center space-y-6">
+            {/* Media File Upload */}
             <div 
               className="border-2 border-dashed border-whisper/30 rounded-xl p-8 w-full cursor-pointer hover:border-whisper/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
@@ -157,41 +157,36 @@ const BeepAudio = () => {
               </div>
             </div>
 
-            <div 
-              className="border-2 border-dashed border-whisper/30 rounded-xl p-8 w-full cursor-pointer hover:border-whisper/50 transition-colors"
-              onClick={() => textInputRef.current?.click()}
-            >
-              <div className="flex flex-col items-center space-y-4">
-                <div className="p-4 bg-whisper/10 rounded-full">
-                  <UploadIcon className="h-8 w-8 text-whisper" />
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-medium">Upload custom words (optional)</p>
-                  <p className="text-sm text-muted-foreground">Upload a .txt file with words to censor</p>
-                  <p className="text-xs text-muted-foreground mt-2">Plain text file up to 1MB</p>
-                </div>
-                <input 
-                  type="file" 
-                  ref={textInputRef}
-                  onChange={handleTextFileChange}
-                  accept=".txt"
-                  className="hidden"
-                />
+            {/* Custom Words Input */}
+            <div className="w-full">
+              <input
+                type="text"
+                value={wordInput}
+                onChange={handleWordInputChange}
+                onKeyDown={handleWordSubmit}
+                placeholder="Enter a word to censor and press Enter"
+                className="w-full p-2 border rounded-md bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-whisper"
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {badWords.map((word, index) => (
+                  <div key={index} className="flex items-center bg-whisper/20 px-2 py-1 rounded-full">
+                    <span>{word}</span>
+                    <button
+                      onClick={() => removeWord(word)}
+                      className="ml-2 text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {(file || textFile) && (
-              <div className="w-full space-y-4">
-                {file && (
-                  <p className="text-sm">
-                    Selected media: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                  </p>
-                )}
-                {textFile && (
-                  <p className="text-sm">
-                    Selected text file: <span className="font-medium">{textFile.name}</span> ({(textFile.size / 1024).toFixed(2)} KB)
-                  </p>
-                )}
+            {file && (
+              <div className="w-full">
+                <p className="text-sm mb-2">
+                  Selected file: <span className="font-medium">{file.name}</span> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                </p>
                 <Button
                   onClick={handleSubmit}
                   disabled={isProcessing}
